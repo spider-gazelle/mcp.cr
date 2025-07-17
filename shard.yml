@@ -1,0 +1,12 @@
+name: mcp
+version: 0.1.0
+
+authors:
+  - Ali Naqvi <syed.alinaqvi@gmail.com>
+
+description: |
+  Unofficial Crystal Shard for Model Context Protocol Servers and clients
+  
+crystal: '>= 1.16.1'
+
+license: MIT
