@@ -61,7 +61,7 @@ module MCP::Protocol
       super()
     end
 
-    getter id : RequestId
+    getter id : RequestId?
   end
 end
 

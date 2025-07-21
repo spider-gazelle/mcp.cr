@@ -128,7 +128,6 @@ module MCP::Shared
       begin
         resp = handler.call(request, RequestHandlerExtra.new)
         Log.trace { "Request handled successfully: #{request.method} (id: #{request.id})" }
-
         if result = resp
           @transport.try &.send(
             JSONRPCResponse.new(id: request.id, result: result)
@@ -215,7 +214,8 @@ module MCP::Shared
       end
 
       message = request
-      message_id = message.id
+      # ameba:disable Lint/NotNil
+      message_id = message.id.not_nil!
 
       if progress_cb = options.try &.on_progress
         Log.trace { "Registering progress handler for request id: #{message_id}" }
@@ -328,7 +328,7 @@ module MCP::Shared
       @request_handlers.delete(method)
     end
 
-    def notification_handler(method : String, &block : MCP::Protocol::Notification ->)
+    def notification_handler(method : String, &block : MCP::Protocol::Notification? ->)
       @notification_handlers[method] = ->(notification : JSONRPCNotification) {
         block.call(notification.params)
       }

@@ -16,8 +16,8 @@ This shard implements the MCP specification for Crystal, enabling you to build a
 
 Implement 
 
-- [ ] SSE Transport
-- [ ] Streamable HTTP Transport 
+- [X] SSE Transport
+- [X] Streamable HTTP Transport 
 - [ ] WebSocket transports (optional)
 
 ## Installation

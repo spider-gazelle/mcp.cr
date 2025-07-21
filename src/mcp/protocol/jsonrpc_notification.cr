@@ -38,7 +38,7 @@ module MCP::Protocol
   end
 
   class InitializedNotification < JSONRPCNotification
-    getter params : InitializedNotificationParams
+    getter params : InitializedNotificationParams?
 
     def initialize(@params)
       super(NotificationsInitialized)

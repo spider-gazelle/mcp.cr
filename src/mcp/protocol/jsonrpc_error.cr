@@ -11,11 +11,11 @@ module MCP::Protocol
       new(id, code, message, data)
     end
 
-    def self.new(id : RequestId, code : ErrorCode, message : String, data : Hash(String, JSON::Any)? = nil)
+    def self.new(id : RequestId?, code : ErrorCode, message : String, data : Hash(String, JSON::Any)? = nil)
       JSONRPCError.new(id, ErrorDetail.new(code, message, data))
     end
 
-    def self.new(id : RequestId, code : ErrorCode, message : String, **kw)
+    def self.new(id : RequestId?, code : ErrorCode, message : String, **kw)
       data = kw.size > 0 ? JSON.parse(kw.to_json).as_h : nil
       new(id, code, message, data)
     end
