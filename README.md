@@ -41,6 +41,64 @@ require "mcp"
 
 ### Creating a Server
 
+#### Easy way
+
+```crystal
+@[MCP::MCPServer(name: "weather_service", version: "2.1.0", tools: false, prompts: false, resources: false)]
+@[MCP::Transport(type: streamable, endpoint: "/mymcp")]
+class WeatherMCPServer
+  include MCP::Annotator
+
+  getter(weather_client : WeatherApi) { WeatherApi.new }
+
+  @[MCP::Tool(
+    name: "weather_alerts",
+    description: "Get weather alerts for a US state. Input is Two-letter US state code (e.g. CA, NY)",
+    state: {description => "Two-letter US state code (e.g. CA, NY)"},
+    limit: {description => "size of result"}
+  )]
+  def get_alerts(state : String, limit : Int32?) : Array(String)
+    weather_client.get_alerts(state)
+  end
+
+  @[MCP::Tool(
+    # name: "get_forecast",
+    description: "Get weather forecast for a specific latitude/longitude",
+    latitude: {"minimum" => -90, "maximum" => 90, "description" => "Latitude coordinate"},
+    longitude: {"minimum" => -180, "maximum" => 180, "default" => 107, "description" => "Longitude coordinate"},
+  )]
+  def get_forecast(latitude : Float64, longitude : Float64) : Array(String)
+    weather_client.get_forecast(latitude, longitude)
+  end
+
+  @[MCP::Prompt(
+    name: "simple",
+    description: "A simple prompt that can take optional context and topic ",
+    context: {description => "Additional context to consider"},
+    topic: {description => "Specific topic to focus on"}
+  )]
+  def simple_prompt(context : String?, topic : String?) : String
+    String.build do |str|
+      str << "Here is some relevant context: #{context}" if context
+      str << "Please help with "
+      str << (topic ? "the following topic: #{topic}" : "whatever questions I may have")
+    end
+  end
+
+  @[MCP::Resource(name: "greeting", uri: "file:///greeting.txt", description: "Sample text resource", mime_type: "text/plain")]
+  def read_text_resource(uri : String) : String
+    raise "Invalid resource uri '#{uri}' or resource does not exist" unless uri == "file:///greeting.txt"
+    "Hello! This is a sample text resource."
+  end
+end
+```
+
+`MCP::Transport` annotation supports 3 type of transports
+* `stdio` : STDIO Transport
+* `sse`: Server Sent Events 
+* `streamable`: Streamable HTTP
+
+#### Hard way
 ```crystal
 require "mcp"
 
