@@ -163,7 +163,7 @@ module MCP::Server
       add_prompt(name, nil, nil, handler)
     end
 
-    def add_prompt(name : String, description : String?, arugments : Array(MCP::Protocol::PromptArgument)?, &handler : MCP::Protocol::GetPromptRequestParams -> MCP::Protocol::GetPromptResult)
+    def add_prompt(name : String, description : String?, arguments : Array(MCP::Protocol::PromptArgument)?, &handler : MCP::Protocol::GetPromptRequestParams -> MCP::Protocol::GetPromptResult)
       prompt = MCP::Protocol::Prompt.new(name, description, arguments)
       add_prompt(prompt, handler)
     end
@@ -207,7 +207,7 @@ module MCP::Server
         raise ArgumentError.new("Server does not support resources capability.")
       end
       Log.info { "Registering resource #{name} #{uri}" }
-      @resources[uri] = RegisteredResource.new(MCP::Protocol::Resource.new(uri, name, description, mime_type), handler)
+      @resources[uri] = RegisteredResource.new(MCP::Protocol::Resource.new(name, uri, description, mime_type), handler)
     end
 
     def add_resources(resources : Array(RegisteredResource))
@@ -336,7 +336,7 @@ module MCP::Server
     end
 
     private def handle_read_resource(request : MCP::Protocol::ReadResourceRequestParams) : MCP::Protocol::ReadResourceResult
-      Log.debug { "Handling read resource request for: #{request.uri}" }
+      Log.info { "Handling read resource request for: #{request.uri}" }
       resource = @resources[request.uri]? || raise "Resource not found: #{request.uri}"
       resource.handler.call(request)
     end
