@@ -93,9 +93,6 @@ end
 WeatherMCPServer.run
 ```
 
-Here's a clearer and more polished rewrite of the provided README markdown content:
-
-
 ### Why the Unusual Name `MCP::MCPServer`?
 
 The annotation is named `MCPServer` instead of the more intuitive `Server` to avoid a naming conflict with the existing `MCP::Server` module.
