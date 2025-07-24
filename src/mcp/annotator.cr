@@ -1,6 +1,10 @@
 require "./runner"
 
 module MCP
+  # Annotation for Params
+  annotation Param
+  end
+
   # Annotation for marking methods as MCP tools
   annotation Tool
   end
@@ -23,9 +27,15 @@ module MCP
 
   module Annotator
     macro included
+        getter! server : MCP::Server::Server
+
+        def initialize(@server)
+        end
+
         def self.run
-        obj = {{@type}}.new
-        server = obj.create_mcp_server
+        server = {{@type}}.create_mcp_server
+        obj = {{@type}}.new(server)
+        obj._register_features(obj.server)
         {% if tran_ann = @type.annotation(MCP::Transport) %}
             {% transport = tran_ann[:type].stringify %}
             {% endpoint = tran_ann[:endpoint] %}
@@ -48,9 +58,9 @@ module MCP
         {% end %}
         end
 
+       def self.create_mcp_server
         {% if server_ann = @type.annotation(MCP::MCPServer) %}
-        private def _generate_mcp_server
-          {% name = server_ann[:name] || @type.name.stringify.underscore %}
+         {% name = server_ann[:name] || @type.name.stringify.underscore %}
           {% version = server_ann[:version] || "1.0.0" %}
 
           capabilities = MCP::Protocol::ServerCapabilities.new
@@ -76,8 +86,10 @@ module MCP
             ),
             MCP::Server::ServerOptions.new(capabilities: capabilities)
           )
+        {% else %}
+            raise "No @MCP::MCPServer annotation found. Please add @[MCP::MCPServer(name: \"your_server\", version: \"1.0.0\")] to your class."
+        {% end %}
         end
-      {% end %}
 
         protected def self._map_crystal_type_to_json_schema(crystal_type : String) : Hash(String, JSON::Any)
             case crystal_type
@@ -178,16 +190,10 @@ module MCP
         end
     end
 
-    def create_mcp_server
-      {% if @type.annotation(MCP::MCPServer) %}
-        server = _generate_mcp_server
-        register_mcp_tools(server)
-        register_mcp_prompts(server)
-        register_mcp_resources(server)
-        server
-      {% else %}
-        raise "No @MCP::MCPServer annotation found. Please add @[MCP::MCPServer(name: \"your_server\", version: \"1.0.0\")] to your class."
-      {% end %}
+    def _register_features(server)
+      register_mcp_tools(server)
+      register_mcp_prompts(server)
+      register_mcp_resources(server)
     end
 
     def register_mcp_tools(server)
@@ -206,6 +212,18 @@ module MCP
                 {% crystal_type_name = base_type.resolve.name.stringify %}
 
                 schema = {{@type}}._map_crystal_type_to_json_schema({{crystal_type_name}})
+
+                {% if param_ann = arg.annotation(MCP::Param) %}
+                    {% if param_ann[:description] %}
+                    schema["description"] = JSON::Any.new({{param_ann[:description]}})
+                    {% end %}
+                    {% for key, value in param_ann.named_args %}
+                    {% unless key == :description %}
+                        schema["{{key.id}}"] = JSON::Any.new({{value}})
+                    {% end %}
+                    {% end %}
+                {% end %}
+
                 {% if ann[arg.name.symbolize] %}
                   {% arg_ann = ann[arg.name.symbolize] %}
                   {% if arg_ann.is_a?(HashLiteral) %}
@@ -357,6 +375,16 @@ module MCP
                 arg_title = nil
                 arg_description = nil
                 arg_required = {% if is_optional || arg.default_value %}false{% else %}true{% end %}
+
+                {% if param_ann = arg.annotation(MCP::Param) %}
+                    {% if param_ann[:description] %}
+                    arg_description = {{param_ann[:description]}}
+                    {% end %}
+                    {% if param_ann[:title] %}
+                    arg_title = {{param_ann[:title]}}
+                    {% end %}
+                {% end %}
+
                 {% if ann[arg.name.symbolize] %}
                     {% arg_ann = ann[arg.name.symbolize] %}
                     {% if arg_ann.is_a?(HashLiteral) %}

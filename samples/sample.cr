@@ -10,31 +10,25 @@ class WeatherMCPServer
 
   @[MCP::Tool(
     name: "weather_alerts",
-    description: "Get weather alerts for a US state. Input is Two-letter US state code (e.g. CA, NY)",
-    state: {description => "Two-letter US state code (e.g. CA, NY)"},
-    limit: {description => "size of result"}
+    description: "Get weather alerts for a US state. Input is Two-letter US state code (e.g. CA, NY)"
   )]
-  def get_alerts(state : String, limit : Int32?) : Array(String)
+  def get_alerts(@[MCP::Param(description: "Two-letter US state code (e.g. CA, NY)")] state : String,
+                 @[MCP::Param(description: "size of result")] limit : Int32?) : Array(String)
     weather_client.get_alerts(state)
   end
 
-  @[MCP::Tool(
-    # name: "get_forecast",
-    description: "Get weather forecast for a specific latitude/longitude",
-    latitude: {"minimum" => -90, "maximum" => 90, "description" => "Latitude coordinate"},
-    longitude: {"minimum" => -180, "maximum" => 180, "default" => 107, "description" => "Longitude coordinate"},
-  )]
-  def get_forecast(latitude : Float64, longitude : Float64) : Array(String)
+  @[MCP::Tool(description: "Get weather forecast for a specific latitude/longitude")]
+  def get_forecast(@[MCP::Param(description: "Latitude coordinate", minimum: -90, maximum: 90)] latitude : Float64,
+                   @[MCP::Param(description: "Longitude coordinate", minimum: -180, maximum: 107)] longitude : Float64) : Array(String)
     weather_client.get_forecast(latitude, longitude)
   end
 
   @[MCP::Prompt(
     name: "simple",
-    description: "A simple prompt that can take optional context and topic ",
-    context: {description => "Additional context to consider"},
-    topic: {description => "Specific topic to focus on"}
+    description: "A simple prompt that can take optional context and topic"
   )]
-  def simple_prompt(context : String?, topic : String?) : String
+  def simple_prompt(@[MCP::Param(description: "Additional context to consider")] context : String?,
+                    @[MCP::Param(description: "A Specific topic to focus on")] topic : String?) : String
     String.build do |str|
       str << "Here is some relevant context: #{context}" if context
       str << "Please help with "
@@ -48,6 +42,8 @@ class WeatherMCPServer
     "Hello! This is a sample text resource."
   end
 end
+
+WeatherMCPServer.run
 
 class WeatherApi
   getter client : HTTP::Client
@@ -168,5 +164,3 @@ class WeatherApi
     getter detailed_forecast : String
   end
 end
-
-WeatherMCPServer.run

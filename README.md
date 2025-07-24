@@ -1,16 +1,18 @@
-# MCP Crystal SDK
+# Crystal MCP: Unofficial Crystal Implementation of the Model Context Protocol
 
-The un-official Crystal-lang implementation of [Model Context Protocol](https://modelcontextprotocol.io) (MCP) providing both client and server capabilities for integrating with LLM surfaces across various platforms.
+This is an unofficial Crystal language implementation of the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), offering both client and server functionality to enable seamless integration with LLM interfaces across a variety of platforms.
 
 ## Overview
 
-The Model Context Protocol allows applications to provide context for LLMs in a standardized way, separating the concerns of providing context from the actual LLM interaction.
-This shard implements the MCP specification for Crystal, enabling you to build applications that can communicate using MCP.
+The Model Context Protocol (MCP) standardizes how applications provide contextual information to large language models (LLMs), decoupling context management from the LLM runtime itself.
 
-- Build MCP clients that can connect to any MCP server
-- Create MCP servers that expose resources, prompts and tools
-- Use standard transports like STDIO
-- Handle all MCP protocol messages and lifecycle events
+This Crystal shard brings full MCP compatibility to your applications, allowing you to:
+
+* Develop MCP clients that can connect to any MCP-compliant server
+* Implement MCP servers that expose **resources**, **prompts**, and **tools**
+* Use standard transports such as **STDIO**, **SSE**, **HTTP Streamable**
+* Manage the full MCP message flow and lifecycle events effortlessly
+
 
 ### TODO 
 
@@ -41,9 +43,11 @@ require "mcp"
 
 ### Creating a Server
 
-#### Easy way
+#### Easy way (Annotate and enjoy)
 
 ```crystal
+require "mcp"
+
 @[MCP::MCPServer(name: "weather_service", version: "2.1.0", tools: false, prompts: false, resources: false)]
 @[MCP::Transport(type: streamable, endpoint: "/mymcp")]
 class WeatherMCPServer
@@ -53,31 +57,25 @@ class WeatherMCPServer
 
   @[MCP::Tool(
     name: "weather_alerts",
-    description: "Get weather alerts for a US state. Input is Two-letter US state code (e.g. CA, NY)",
-    state: {description => "Two-letter US state code (e.g. CA, NY)"},
-    limit: {description => "size of result"}
+    description: "Get weather alerts for a US state. Input is Two-letter US state code (e.g. CA, NY)"
   )]
-  def get_alerts(state : String, limit : Int32?) : Array(String)
+  def get_alerts(@[MCP::Param(description: "Two-letter US state code (e.g. CA, NY)")] state : String,
+                 @[MCP::Param(description: "size of result")] limit : Int32?) : Array(String)
     weather_client.get_alerts(state)
   end
 
-  @[MCP::Tool(
-    # name: "get_forecast",
-    description: "Get weather forecast for a specific latitude/longitude",
-    latitude: {"minimum" => -90, "maximum" => 90, "description" => "Latitude coordinate"},
-    longitude: {"minimum" => -180, "maximum" => 180, "default" => 107, "description" => "Longitude coordinate"},
-  )]
-  def get_forecast(latitude : Float64, longitude : Float64) : Array(String)
+  @[MCP::Tool(description: "Get weather forecast for a specific latitude/longitude")]
+  def get_forecast(@[MCP::Param(description: "Latitude coordinate", minimum: -90, maximum: 90)] latitude : Float64,
+                   @[MCP::Param(description: "Longitude coordinate", minimum: -180, maximum: 107)] longitude : Float64) : Array(String)
     weather_client.get_forecast(latitude, longitude)
   end
 
   @[MCP::Prompt(
     name: "simple",
-    description: "A simple prompt that can take optional context and topic ",
-    context: {description => "Additional context to consider"},
-    topic: {description => "Specific topic to focus on"}
+    description: "A simple prompt that can take optional context and topic"
   )]
-  def simple_prompt(context : String?, topic : String?) : String
+  def simple_prompt(@[MCP::Param(description: "Additional context to consider")] context : String?,
+                    @[MCP::Param(description: "A Specific topic to focus on")] topic : String?) : String
     String.build do |str|
       str << "Here is some relevant context: #{context}" if context
       str << "Please help with "
@@ -91,14 +89,44 @@ class WeatherMCPServer
     "Hello! This is a sample text resource."
   end
 end
+
+WeatherMCPServer.run
 ```
 
-`MCP::Transport` annotation supports 3 type of transports
-* `stdio` : STDIO Transport
-* `sse`: Server Sent Events 
+Here's a clearer and more polished rewrite of the provided README markdown content:
+
+
+### Why the Unusual Name `MCP::MCPServer`?
+
+The annotation is named `MCPServer` instead of the more intuitive `Server` to avoid a naming conflict with the existing `MCP::Server` module.
+
+### `MCP::MCPServer` Annotation
+
+The `MCP::MCPServer` annotation is used to configure an MCP Server instance. Here's how its fields work:
+
+* **`name` and `version`**: These populate the `serverInfo` field during the `initialize` lifecycle event.
+* **`tools`, `prompts`, `resources`** *(optional)*: These flags indicate if your server supports updates or notifications for these elements.
+
+If you set any of `tools`, `prompts`, or `resources` to `true`, you're responsible for notifying the MCP client when those lists change. For example:
+
+If `resources: true` is set, and the resource list changes, you must call:
+
+```crystal
+server.send_resource_list_changed
+```
+
+This informs the client that the resource list has been updated.
+
+### `MCP::Transport` Annotation
+
+This annotation defines the supported transport types for the MCP Server. It supports three modes:
+
+* `stdio`: Standard input/output
+* `sse`: Server-Sent Events
 * `streamable`: Streamable HTTP
 
-#### Hard way
+
+#### Hard way (Low-level API calls)
 ```crystal
 require "mcp"
 
