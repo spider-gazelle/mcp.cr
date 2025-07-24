@@ -93,11 +93,11 @@ end
 WeatherMCPServer.run
 ```
 
-### Why the Unusual Name `MCP::MCPServer`?
+#### Why the Unusual Name `MCP::MCPServer`?
 
 The annotation is named `MCPServer` instead of the more intuitive `Server` to avoid a naming conflict with the existing `MCP::Server` module.
 
-### `MCP::MCPServer` Annotation
+#### `MCP::MCPServer` Annotation
 
 The `MCP::MCPServer` annotation is used to configure an MCP Server instance. Here's how its fields work:
 
@@ -114,7 +114,7 @@ server.send_resource_list_changed
 
 This informs the client that the resource list has been updated.
 
-### `MCP::Transport` Annotation
+#### `MCP::Transport` Annotation
 
 This annotation defines the supported transport types for the MCP Server. It supports three modes:
 
